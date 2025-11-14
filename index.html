@@ -1,0 +1,118 @@
+import math
+
+# ...existing code...
+EMPLOYMENT = {
+    "0": 0,    # None
+    "1": 5,    # 1-10 hrs/week (avg 5)
+    "2": 15,   # 11-20 hrs/week (avg 15)
+    "3": 25,   # 21-30 hrs/week (avg 25)
+    "4": 35,   # 31+ hrs/week (avg 35)
+}
+
+NON_ACAD = {
+    "0": 0,    # None
+    "1": 3,    # 1-5 hrs/week (avg 3)
+    "2": 8,    # 6-10 hrs/week (avg 8)
+    "3": 12,   # 11+ hrs/week (avg 12)
+}
+
+COMMUTE = {
+    "0": 0,    # No commute
+    "1": 1.5,  # <30 min/day ≈ 1-2 hrs/week (avg 1.5)
+    "2": 4.5,  # 30-60 min/day ≈ 3-6 hrs/week (avg 4.5)
+    "3": 9,    # >60 min/day ≈ 6-12 hrs/week (avg 9)
+}
+
+TECH = {
+    "0": 0,    # Reliable
+    "1": 2,    # Occasional issues (1-3 hrs/week impact)
+    "2": 6,    # Frequent issues (4-8 hrs/week impact)
+}
+
+SCENARIOS = {
+    "Relaxed (40 hrs/week)": 40,
+    "Average (60 hrs/week)": 60,
+    "Strict (80 hrs/week)": 80,
+}
+
+COURSE_HOURS = 12  # per 4-unit course
+DEFAULT_CAP = 5    # practical cap (can be changed)
+
+def prompt_choice(prompt, choices):
+    print(prompt)
+    for k, v in choices.items():
+        print(f"  {k}) {v}")
+    sel = input("Choose option number: ").strip()
+    return sel if sel in choices else None
+
+def main():
+    print("Course-load calculator — map your weekly non-academic commitments to recommended courses.\n")
+
+    # Employment
+    emp_text = {
+        "0": "None (0 hrs)",
+        "1": "1–10 hrs/week",
+        "2": "11–20 hrs/week",
+        "3": "21–30 hrs/week",
+        "4": "31+ hrs/week",
+    }
+    emp = prompt_choice("Employment commitments:", emp_text) or "0"
+    emp_hours = EMPLOYMENT.get(emp, 0)
+
+    # Non-academic responsibilities (extracurriculars / family / health)
+    non_text = {
+        "0": "None (0 hrs)",
+        "1": "1–5 hrs/week",
+        "2": "6–10 hrs/week",
+        "3": "11+ hrs/week",
+    }
+    non = prompt_choice("Regular non-academic responsibilities (clubs, caregiving, health):", non_text) or "0"
+    non_hours = NON_ACAD.get(non, 0)
+
+    # Commute
+    comm_text = {
+        "0": "No commute (0 hrs)",
+        "1": "<30 min/day (~1-2 hrs/week)",
+        "2": "30–60 min/day (~3-6 hrs/week)",
+        "3": "More than 60 min/day (~6-12 hrs/week)",
+    }
+    comm = prompt_choice("Daily/weekly commuting:", comm_text) or "0"
+    comm_hours = COMMUTE.get(comm, 0)
+
+    # Technology
+    tech_text = {
+        "0": "Reliable computer & internet (0 hrs)",
+        "1": "Occasional access issues (1–3 hrs/week)",
+        "2": "Frequent access issues (4–8 hrs/week)",
+    }
+    tech = prompt_choice("Access to technology/connectivity:", tech_text) or "0"
+    tech_hours = TECH.get(tech, 0)
+
+    # Uncertainties buffer
+    try:
+        buffer_input = input("Additional buffer for uncertainties (hours per week, e.g., seasonal changes). Enter 0 if none: ").strip()
+        buffer_hours = float(buffer_input or "0")
+    except ValueError:
+        buffer_hours = 0.0
+
+    # Cap override
+    try:
+        cap_input = input(f"Practical courses cap (default {DEFAULT_CAP}). Enter to accept default: ").strip()
+        cap = int(cap_input) if cap_input else DEFAULT_CAP
+    except ValueError:
+        cap = DEFAULT_CAP
+
+    total_non_acad = emp_hours + non_hours + comm_hours + tech_hours + buffer_hours
+
+    print("\nSummary of weekly non-academic commitments: {:.1f} hours".format(total_non_acad))
+    print("-----------------------------------------------------")
+    for name, target in SCENARIOS.items():
+        avail = max(0.0, target - total_non_acad)
+        courses = math.floor(avail / COURSE_HOURS)
+        courses = min(courses, cap)
+        leftover = avail - courses * COURSE_HOURS
+        print(f"{name}: Target {target}h -> Available {avail:.1f}h -> Recommended courses: {courses} (leftover {leftover:.1f}h)")
+    print("\nNote: Each 4-unit course ≈ 12 hrs/week. Recommendations are conservative estimates. Adjust buffer/cap as needed.")
+
+if __name__ == "__main__":
+    main()
